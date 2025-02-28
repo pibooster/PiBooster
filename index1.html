@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pi Booster</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: Arial, sans-serif; }
+
+        /* Arrière-plan */
+        body { 
+            background: linear-gradient(to bottom, #320070, #000A12);
+            text-align: center; color: white; padding: 20px;
+        }
+
+        /* Entête */
+        header { 
+            position: fixed; top: 0; left: 0; width: 100%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 20px; font-weight: bold; padding: 7px;
+            background: black; z-index: 1000; color: white;
+        }
+        header img { width: 30px; margin-right: 10px; color:white; }
+
+        /* Conteneur principal */
+        .container { margin-top: 80px; }
+
+        /* Compteur */
+        #compteur { font-size: 32px; font-weight: bold; margin: 20px 0; }
+
+        /* Bouton Miner */
+        .miner-container { display: flex; justify-content: center; margin-bottom: 20px; }
+        #miner-btn { 
+            width: 120px; height: 120px; border-radius: 50%;
+            background: #FFA500; color: #320070; font-size: 28px;
+            border: none; cursor: pointer; font-weight: bold;
+            box-shadow: 0px 4px 6px rgba(0,0,0,0.3);
+            animation: glowEffect 1.5s infinite alternate;
+        }
+        #miner-btn:disabled { background: gray; cursor: not-allowed; }
+
+        /* Texte d'introduction */
+        .intro {
+            width 90%; max-width: 700px; margin: 20px auto;
+            font-size: 16px; line-height: 1.5;
+        }
+
+        /* Section actualités */
+        .news { 
+            width: 100%; max-width: 700px; background: #3B2D50;
+            border: 0.1px solid #CA95F1;
+            padding: 15px; margin: 15px auto; border-radius: 16px; text-align: left;
+        }
+        .news img { width: 100%; aspect-ratio: 1/1; border-radius: 10px; padding: 5px; margin: 0px }
+        .news-title { display: flex; justify-content: space-between; }
+
+        /* Menu flottant */
+        .menu { 
+            position: absolute; right: 10px; top: 50px;
+            display: flex; flex-direction: column; gap: 5px;
+            align-items: center;
+        }
+        .menu button { 
+            display: flex; flex-direction: column; align-items: center; color: white;
+            justify-content: center; width: 60px; height: 60px;
+            background: transparent; border: none; cursor: pointer;
+            border-radius: 50%; font-weight: bold;
+        }
+        .menu button img { width: 20px } /* Icônes en blanc */
+        .menu span { font-size: 12px; margin-top: 5px; }
+        #speed-btn span { color: #FFC107; } /* Texte en jaune pour la vitesse */
+
+        /* Fenêtre échange */
+        .modal { 
+            display: none; position: fixed; top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            background: white; padding: 20px;
+            box-shadow: 0px 4px 6px rgba(0,0,0,0.3); 
+            border-radius: 10px; color: black;
+        }
+        .modal input { width: 100px; margin: 10px 0; padding: 5px; }
+        .modal button { background: #6A1B9A; color: white; padding: 10px; border: none; cursor: pointer; }
+.jeton img {
+    width: 80%;
+    max-width: 500px;
+    height: auto;
+    border-radius: 35px;
+    object-fit: cover;
+    
+}
+
+@keyframes glowEffect {
+    0% { filter: drop-shadow(0 0 5px #CA95F1); }
+    100% { filter: drop-shadow(0 0 15px #CA95F1); }
+}
+
+#loading-screen {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: white;
+    display: flex; justify-content: center; align-items: center;
+    z-index: 2000;
+}
+
+#loading-logo {
+    width: 100px; /* Taille initiale du logo */
+    animation: zoomEffect 1s infinite alternate;
+}
+
+@keyframes zoomEffect {
+    0% { transform: scale(3); }
+    100% { transform: scale(4); }
+}
+
+    </style>
+</head>
+<body>
+    <div id="loading-screen">
+    <img src="acceuil.png" alt="Logo" id="loading-logo">
+</div>
+
+    <header>
+        <img src="logo.jpg" alt="Logo">
+       BIENVENUE SUR PI BOOSTER
+    </header>
+
+    <div class="container">
+        <!-- Menu flottant (défile avec la page) -->
+        <div class="menu">
+            <button onclick="location.href='https://t.me/support_bot'">
+                <img src="icon_chat.png" alt="Support">
+                <span>Support</span>
+            </button>
+            <button>
+                <img src="affiliés.png" alt="Affiliés">
+                <span>Affiliés</span>
+            </button>
+            <button id="speed-btn">
+                <img src="icon_flash.png" alt="⚡">
+                <span>0.10 πb/h</span>
+            </button>
+            <button onclick="shareLink()">
+                <img src="icon_share.png" alt="Partager">
+                <span>Partager</span>
+            </button>
+            <button onclick="openExchange()">
+                <img src="icon_exch.png" alt="Échange">
+                <span>Échange</span>
+            </button>
+            <button id="logout-btn"> <img src="icon_dec.png" alt="Déconnexion">
+            <span>Déconnexion</span>
+            </button>
+
+        </div>
+
+        <!-- Compteur -->
+        <div id="compteur">0.000 πb</div>
+
+        <!-- Bouton Miner -->
+        <div class="miner-container">
+            <button id="miner-btn">Miner</button>
+        </div>
+
+        <!-- Jeton πb -->
+        <div class="jeton">
+               <img src="jeton.png" alt="Jeton πb">
+        </div>
+
+
+        <!-- Texte d'introduction -->
+        <div class="intro">
+            <p>PiBooster est le concept 'original' de minage. Vous validez des blocs de transactions de crypto-monnaie avec votre propre puissance de calcul et obtenez une récompense pour votre "travail". 
+            Mais le minage a tellement évolué que maintenant de très grands "pools" (groupes de puissance de calcul) rendent beaucoup plus difficile pour les mineurs de miner un bloc par eux-mêmes, 
+            puisque vous êtes en concurrence avec des opérations beaucoup plus grandes, et ils ont partagé les récompenses entre tous leurs mineurs.</p>
+        </div>
+
+        <!-- Section Actualités -->
+        <div class="news">
+            <div class="news-title">
+                <span>Annonce</span>
+                <span>26/02/2025</span>
+            </div>
+            <img src="jeton.png" alt="Actu">
+            <p>Nouvelle mise à jour disponible ! Mais le minage a tellement évolué que maintenant de très grands "pools" (groupes de puissance de calcul) rendent beaucoup plus difficile pour les mineurs de miner un bloc par eux-mêmes, 
+            puisque vous êtes en concurrence avec des opérations beaucoup plus grandes, et ils ont partagé les récompenses entre tous leurs mineurs.</p>
+        </div>
+    </div>
+    
+            <!-- Section Actualités -->
+        <div class="news">
+            <div class="news-title">
+                <span>Annonce</span>
+                <span>26/02/2025</span>
+            </div>
+            <img src="jeton.png" alt="Actu">
+            <p>Nouvelle mise à jour disponible !</p>
+        </div>
+    </div>
+    
+            <!-- Section Actualités -->
+        <div class="news">
+            <div class="news-title">
+                <span>Annonce</span>
+                <span>26/02/2025</span>
+            </div>
+            <img src="jeton.png" alt="Actu">
+            <p>Nouvelle mise à jour disponible !</p>
+        </div>
+    </div>
+    
+            <!-- Section Actualités -->
+        <div class="news">
+            <div class="news-title">
+                <span>Annonce</span>
+                <span>26/02/2025</span>
+            </div>
+            <img src="jeton.png" alt="Actu">
+            <p>Nouvelle mise à jour disponible !</p>
+        </div>
+    </div>
+    
+            <!-- Section Actualités -->
+        <div class="news">
+            <div class="news-title">
+                <span>Annonce</span>
+                <span>26/02/2025</span>
+            </div>
+            <img src="jeton.png" alt="Actu">
+            <p>Nouvelle mise à jour disponible !</p>
+        </div>
+    </div>
+    
+            <!-- Section Actualités -->
+        <div class="news">
+            <div class="news-title">
+                <span>Annonce</span>
+                <span>26/02/2025</span>
+            </div>
+            <img src="jeton.png" alt="Actu">
+            <p>Nouvelle mise à jour disponible !</p>
+        </div>
+    </div>
+    
+            <!-- Section Actualités -->
+        <div class="news">
+            <div class="news-title">
+                <span>Annonce</span>
+                <span>26/02/2025</span>
+            </div>
+            <img src="jeton.png" alt="Actu">
+            <p>Nouvelle mise à jour disponible !</p>
+        </div>
+    </div>
+
+    <!-- Fenêtre d'échange -->
+    <div id="exchange-modal" class="modal">
+        <h3>Échanger πb contre π</h3>
+        
+        <p>Vous n'avez pas assez de πb pour effectuer d'échange. Inviter plus personne à nous rejoindre, ce qui augmentera votre vitesse de minage. </p></br>
+    
+        <button onclick="closeExchange()">Fermer</button>
+    </div>
+
+  <script>
+// Récupérer l'utilisateur actuellement connecté
+let currentUser = localStorage.getItem("currentUser");
+
+if (!currentUser) {
+    window.location.href = "login.html"; // Rediriger vers la page de connexion si aucun utilisateur n'est connecté
+}
+
+// Initialisation des variables de minage
+let miningSpeed = 0.10;
+let balance = 0;
+let miningActive = false;
+let lastMiningTime = null;
+
+// Fonction pour enregistrer les données spécifiques à l'utilisateur
+function saveData() {
+    let users = JSON.parse(localStorage.getItem("users")) || {};
+    if (users[currentUser]) {
+        users[currentUser].miningData = {
+            balance: balance,
+            miningSpeed: miningSpeed,
+            lastMiningTime: new Date().toISOString(),
+            miningActive: miningActive
+        };
+        localStorage.setItem("users", JSON.stringify(users));
+    }
+}
+
+// Fonction pour charger les données de l'utilisateur actuel
+function loadData() {
+    let users = JSON.parse(localStorage.getItem("users")) || {};
+    if (users[currentUser] && users[currentUser].miningData) {
+        let data = users[currentUser].miningData;
+        balance = data.balance || 0;
+        miningSpeed = data.miningSpeed || 0.10;
+        miningActive = data.miningActive || false;
+        lastMiningTime = data.lastMiningTime || null;
+
+        // Vérifier si 24h se sont écoulées depuis le dernier minage
+        if (lastMiningTime) {
+            let timeElapsed = (new Date() - new Date(lastMiningTime)) / 1000;
+            if (timeElapsed >= 86400) {
+                miningActive = false;
+            }
+        }
+
+        // Mise à jour de l'affichage
+        document.getElementById("compteur").textContent = balance.toFixed(6) + " πb";
+        document.getElementById("speed-btn").querySelector('span').textContent = miningSpeed.toFixed(2) + " πb/h";
+
+        // Désactiver le bouton Miner si le minage est en cours
+        if (miningActive) {
+            document.getElementById("miner-btn").disabled = true;
+            setTimeout(() => {
+                document.getElementById("miner-btn").disabled = false;
+            }, 86400000);
+        }
+    }
+}
+
+// Fonction pour mettre à jour le compteur de minage
+function updateCounter() {
+    if (miningActive) {
+        balance += miningSpeed / 3600;
+        document.getElementById("compteur").textContent = balance.toFixed(6) + " πb";
+        saveData();
+    }
+}
+
+// Mise à jour du compteur toutes les secondes
+setInterval(updateCounter, 1000);
+
+// Charger les données lorsque la page se charge
+window.onload = function() {
+    loadData();
+};
+
+// Gestion du bouton Miner
+document.getElementById("miner-btn").addEventListener("click", function() {
+    if (!miningActive) {
+        miningActive = true;
+        this.disabled = true;
+        saveData();
+
+        setTimeout(() => {
+            this.disabled = false;
+            miningActive = false;
+            saveData();
+        }, 86400000);
+    }
+});
+
+// Partage du lien d'affiliation
+function shareLink() {
+    navigator.clipboard.writeText("https://t.me/joinchat/monlien").then(() => alert("Lien copié !"));
+}
+
+// Ouvrir et fermer l'échange
+function openExchange() {
+    document.getElementById("exchange-modal").style.display = "block";
+}
+
+function closeExchange() {
+    document.getElementById("exchange-modal").style.display = "none";
+}
+
+// Cacher l'écran de chargement après 1 seconde
+setTimeout(() => {
+    document.getElementById("loading-screen").style.display = "none";
+}, 1000);
+
+document.getElementById("logout-btn").addEventListener("click", function() {
+    localStorage.removeItem("currentUser"); // Supprime l'utilisateur actif
+    window.location.href = "index.html"; // Redirige vers la page de connexion
+});
+
+
+</script>
+
+</body>
+</html>
