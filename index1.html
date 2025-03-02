@@ -15,18 +15,31 @@
 
         /* Entête */
         header { 
-            position: fixed; top: 0; left: 0; width: 100%;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 20px; font-weight: bold; padding: 7px;
-            background: black; z-index: 1000; color: white;
-        }
+    position: fixed; 
+    top: 0; 
+    left: 0; 
+    width: 100%;
+    display: flex; 
+    align-items: center; 
+    justify-content: center;
+    font-size: 20px; 
+    font-weight: bold; 
+    padding: 7px;
+    background: rgba(0, 0, 0, 0.6); /* Noir avec 50% de transparence */
+    color: white;
+    z-index: 1000;
+
+    /* Ombre sous le header */
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.5);
+}
+
         header img { width: 30px; margin-right: 10px; color:white; }
 
         /* Conteneur principal */
         .container { margin-top: 80px; }
 
         /* Compteur */
-        #compteur { font-size: 32px; font-weight: bold; margin: 20px 0; }
+        #compteur { font-size: 20px; font-weight: bold; margin: 0.1px 20%; }
 
         /* Bouton Miner */
         .miner-container { display: flex; justify-content: center; margin-bottom: 20px; }
@@ -121,7 +134,9 @@
 
     <header>
         <img src="logo.jpg" alt="Logo">
-       BIENVENUE SUR PI BOOSTER
+               <!-- Compteur -->
+        <div id="compteur">0.000 πb</div>
+
     </header>
 
     <div class="container">
@@ -131,14 +146,17 @@
                 <img src="icon_chat.png" alt="Support">
                 <span>Support</span>
             </button>
-            <button>
-                <img src="affiliés.png" alt="Affiliés">
-                <span>Affiliés</span>
-            </button>
-            <button id="speed-btn">
-                <img src="icon_flash.png" alt="⚡">
-                <span>0.10 πb/h</span>
-            </button>
+<!-- Bouton Affiliés (mis à jour) -->
+<button id="nombre">
+    <img src="affiliés.png" alt="Affiliés">
+    <span>Affiliés : <span id="affiliates-count">0</span></span>
+</button>
+
+<!-- Bouton Vitesse (mis à jour) -->
+<button id="speed-btn">
+    <img src="icon_flash.png" alt="⚡">
+    <span><span id="mining-speed">0.10</span> πb/h</span>
+</button>
             <button onclick="shareLink()">
                 <img src="icon_share.png" alt="Partager">
                 <span>Partager</span>
@@ -153,8 +171,6 @@
 
         </div>
 
-        <!-- Compteur -->
-        <div id="compteur">0.000 πb</div>
 
         <!-- Bouton Miner -->
         <div class="miner-container">
@@ -262,91 +278,72 @@
     </div>
 
   <script>
-// Récupérer l'utilisateur actuellement connecté
-let currentUser = localStorage.getItem("currentUser");
-
+// Vérifier si un utilisateur est connecté, sinon rediriger vers la page de connexion
+let currentUser = sessionStorage.getItem("currentUser");
 if (!currentUser) {
-    window.location.href = "login.html"; // Rediriger vers la page de connexion si aucun utilisateur n'est connecté
+    window.location.href = "login.html";
 }
 
-// Initialisation des variables de minage
-let miningSpeed = 0.10;
-let balance = 0;
-let miningActive = false;
-let lastMiningTime = null;
+// Initialisation des données utilisateur
+let users = JSON.parse(localStorage.getItem("users")) || {};
+if (!users[currentUser]) {
+    users[currentUser] = { miningData: { balance: 0, miningSpeed: 0.10, lastMiningTime: null, miningActive: false, affiliates: 0 } };
+    localStorage.setItem("users", JSON.stringify(users));
+}
 
-// Fonction pour enregistrer les données spécifiques à l'utilisateur
-function saveData() {
-    let users = JSON.parse(localStorage.getItem("users")) || {};
-    if (users[currentUser]) {
-        users[currentUser].miningData = {
-            balance: balance,
-            miningSpeed: miningSpeed,
-            lastMiningTime: new Date().toISOString(),
-            miningActive: miningActive
-        };
-        localStorage.setItem("users", JSON.stringify(users));
+// Charger les données
+let userData = users[currentUser].miningData;
+let balance = userData.balance;
+let miningSpeed = userData.miningSpeed;
+let lastMiningTime = userData.lastMiningTime;
+let miningActive = userData.miningActive;
+
+// Vérifier si 24h sont passées depuis le dernier minage
+if (lastMiningTime) {
+    let elapsedTime = (new Date() - new Date(lastMiningTime)) / 1000;
+    if (elapsedTime >= 86400) {
+        miningActive = false;
     }
 }
 
-// Fonction pour charger les données de l'utilisateur actuel
-function loadData() {
-    let users = JSON.parse(localStorage.getItem("users")) || {};
-    if (users[currentUser] && users[currentUser].miningData) {
-        let data = users[currentUser].miningData;
-        balance = data.balance || 0;
-        miningSpeed = data.miningSpeed || 0.10;
-        miningActive = data.miningActive || false;
-        lastMiningTime = data.lastMiningTime || null;
+// Mettre à jour l'affichage
+document.getElementById("compteur").textContent = balance.toFixed(6) + " πb";
+document.getElementById("speed-btn").querySelector('span').textContent = miningSpeed.toFixed(2) + " πb/h";
+document.getElementById("nombre").querySelector('span').textContent = users[currentUser].miningData.affiliates;
 
-        // Vérifier si 24h se sont écoulées depuis le dernier minage
-        if (lastMiningTime) {
-            let timeElapsed = (new Date() - new Date(lastMiningTime)) / 1000;
-            if (timeElapsed >= 86400) {
-                miningActive = false;
-            }
-        }
-
-        // Mise à jour de l'affichage
-        document.getElementById("compteur").textContent = balance.toFixed(6) + " πb";
-        document.getElementById("speed-btn").querySelector('span').textContent = miningSpeed.toFixed(2) + " πb/h";
-
-        // Désactiver le bouton Miner si le minage est en cours
-        if (miningActive) {
-            document.getElementById("miner-btn").disabled = true;
-            setTimeout(() => {
-                document.getElementById("miner-btn").disabled = false;
-            }, 86400000);
-        }
-    }
+// Désactiver le bouton Miner si déjà utilisé aujourd'hui
+let minerBtn = document.getElementById("miner-btn");
+if (miningActive) {
+    minerBtn.disabled = true;
+    setTimeout(() => {
+        minerBtn.disabled = false;
+    }, 86400000);
 }
 
-// Fonction pour mettre à jour le compteur de minage
-function updateCounter() {
+// Mise à jour du compteur en temps réel
+setInterval(() => {
     if (miningActive) {
         balance += miningSpeed / 3600;
         document.getElementById("compteur").textContent = balance.toFixed(6) + " πb";
         saveData();
     }
+}, 1000);
+
+// Fonction pour sauvegarder les données
+function saveData() {
+    users[currentUser].miningData = { balance, miningSpeed, lastMiningTime: new Date().toISOString(), miningActive, affiliates: users[currentUser].miningData.affiliates };
+    localStorage.setItem("users", JSON.stringify(users));
 }
 
-// Mise à jour du compteur toutes les secondes
-setInterval(updateCounter, 1000);
-
-// Charger les données lorsque la page se charge
-window.onload = function() {
-    loadData();
-};
-
-// Gestion du bouton Miner
-document.getElementById("miner-btn").addEventListener("click", function() {
+// Gestion du bouton de minage
+minerBtn.addEventListener("click", () => {
     if (!miningActive) {
         miningActive = true;
-        this.disabled = true;
+        minerBtn.disabled = true;
         saveData();
 
         setTimeout(() => {
-            this.disabled = false;
+            minerBtn.disabled = false;
             miningActive = false;
             saveData();
         }, 86400000);
@@ -355,27 +352,41 @@ document.getElementById("miner-btn").addEventListener("click", function() {
 
 // Partage du lien d'affiliation
 function shareLink() {
-    navigator.clipboard.writeText("https://t.me/joinchat/monlien").then(() => alert("Lien copié !"));
+    let referralLink = `https://t.me/joinchat/monlien?ref=${currentUser}`;
+    navigator.clipboard.writeText(referralLink).then(() => alert("Lien copié !"));
 }
 
-// Ouvrir et fermer l'échange
+// Ouvrir et fermer la fenêtre d'échange
 function openExchange() {
-    document.getElementById("exchange-modal").style.display = "block";
+    if (balance < 1) {
+        document.getElementById("exchange-modal").style.display = "block";
+    } else {
+        alert("Échange réussi ! 🎉");
+        balance -= 1;
+        saveData();
+        document.getElementById("compteur").textContent = balance.toFixed(6) + " πb";
+    }
 }
 
 function closeExchange() {
     document.getElementById("exchange-modal").style.display = "none";
 }
 
-// Cacher l'écran de chargement après 1 seconde
+// Déconnexion (manuelle)
+document.getElementById("logout-btn").addEventListener("click", () => {
+    sessionStorage.removeItem("currentUser");
+    window.location.href = "index.html";
+});
+
+// Déconnexion automatique quand l'utilisateur quitte la page
+window.addEventListener("beforeunload", () => {
+    sessionStorage.removeItem("currentUser");
+});
+
+// Cacher l'écran de chargement après 1s
 setTimeout(() => {
     document.getElementById("loading-screen").style.display = "none";
 }, 1000);
-
-document.getElementById("logout-btn").addEventListener("click", function() {
-    localStorage.removeItem("currentUser"); // Supprime l'utilisateur actif
-    window.location.href = "index.html"; // Redirige vers la page de connexion
-});
 
 
 </script>
