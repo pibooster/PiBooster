@@ -94,7 +94,7 @@
         .modal input { width: 100px; margin: 10px 0; padding: 5px; }
         .modal button { background: #6A1B9A; color: white; padding: 10px; border: none; cursor: pointer; }
 .jeton img {
-    width: 80%;
+    width: 60%;
     max-width: 500px;
     height: auto;
     border-radius: 35px;
@@ -142,7 +142,7 @@
     <div class="container">
         <!-- Menu flottant (défile avec la page) -->
         <div class="menu">
-            <button onclick="location.href='https://t.me/support_bot'">
+            <button onclick="location.href='https://t.me/pibooster_support'">
                 <img src="icon_chat.png" alt="Support">
                 <span>Support</span>
             </button>
@@ -185,9 +185,9 @@
 
         <!-- Texte d'introduction -->
         <div class="intro">
-            <p>PiBooster est le concept 'original' de minage. Vous validez des blocs de transactions de crypto-monnaie avec votre propre puissance de calcul et obtenez une récompense pour votre "travail". 
-            Mais le minage a tellement évolué que maintenant de très grands "pools" (groupes de puissance de calcul) rendent beaucoup plus difficile pour les mineurs de miner un bloc par eux-mêmes, 
-            puisque vous êtes en concurrence avec des opérations beaucoup plus grandes, et ils ont partagé les récompenses entre tous leurs mineurs.</p>
+            <p>Bienvenue sur PiBooster !
+
+Rejoignez notre communauté et boostez vos gains avec Pi Network. PiBooster vous permet de miner quotidiennement et d'augmenter votre vitesse de minage en invitant d'autres utilisateurs à rejoindre notre programme. Plus vous avez d'affiliés, plus votre vitesse de minage est élevée ! En plus, vous pouvez partager vos PiBoosters (πb) pour des Pi plus tard. Alors, qu'attendez-vous pour commencer à miner et faire grandir votre réseau ?</p>
         </div>
 
         <!-- Section Actualités -->
@@ -278,48 +278,63 @@
     </div>
 
   <script>
-// Vérifier si un utilisateur est connecté, sinon rediriger vers la page de connexion
+const JSONBIN_URL = "https://api.jsonbin.io/v3/b/67c6f6acacd3cb34a8f4d37c";
+const JSONBIN_KEY = "$2a$10$A6p8P.cOtMlM9PtQ5fpvku18fJUj.51Mc.FD716NQSIg0dIAZ1K2O";
+
+// Récupérer les données locales
 let currentUser = sessionStorage.getItem("currentUser");
-
-      
-
-// Initialisation des données utilisateur
 let users = JSON.parse(localStorage.getItem("users")) || {};
+
 if (!users[currentUser]) {
-    users[currentUser] = { miningData: { balance: 0, miningSpeed: 0.10, lastMiningTime: null, miningActive: false, affiliates: 0 } };
+    users[currentUser] = {
+        miningData: { balance: 0, miningSpeed: 1, lastMiningTime: null, miningActive: false, affiliates: 0 }
+    };
     localStorage.setItem("users", JSON.stringify(users));
 }
 
-// Charger les données
 let userData = users[currentUser].miningData;
 let balance = userData.balance;
 let miningSpeed = userData.miningSpeed;
-let lastMiningTime = userData.lastMiningTime;
+let lastMiningTime = userData.lastMiningTime ? new Date(userData.lastMiningTime) : null;
 let miningActive = userData.miningActive;
 
-// Vérifier si 24h sont passées depuis le dernier minage
-if (lastMiningTime) {
-    let elapsedTime = (new Date() - new Date(lastMiningTime)) / 1000;
+let minerBtn = document.getElementById("miner-btn");
+let currentTime = new Date();
+
+// Vérification si le minage est actif et si 24h sont passées
+if (lastMiningTime && miningActive) {
+    let elapsedTime = (currentTime - lastMiningTime) / 1000;
+
     if (elapsedTime >= 86400) {
+        // Plus de 24h sont passées → le bouton se réactive, et le minage s'arrête
         miningActive = false;
+        minerBtn.disabled = false;
+    } else {
+        // Moins de 24h → Désactiver le bouton et reprendre le minage
+        let remainingTime = 86400 - elapsedTime;
+        minerBtn.disabled = true;
+        setTimeout(() => { minerBtn.disabled = false; }, remainingTime * 1000);
     }
 }
 
-// Mettre à jour l'affichage
+// Mise à jour de l'affichage
 document.getElementById("compteur").textContent = balance.toFixed(6) + " πb";
 document.getElementById("speed-btn").querySelector('span').textContent = miningSpeed.toFixed(2) + " πb/h";
-document.getElementById("nombre").querySelector('span').textContent = users[currentUser].miningData.affiliates;
+document.getElementById("nombre").querySelector('span').textContent = userData.affiliates;
 
-// Désactiver le bouton Miner si déjà utilisé aujourd'hui
-let minerBtn = document.getElementById("miner-btn");
-if (miningActive) {
-    minerBtn.disabled = true;
-    setTimeout(() => {
-        minerBtn.disabled = false;
-    }, 86400000);
+// Fonction pour sauvegarder les données
+function saveData() {
+    users[currentUser].miningData = { 
+        balance, 
+        miningSpeed, 
+        lastMiningTime: lastMiningTime ? lastMiningTime.toISOString() : null, 
+        miningActive, 
+        affiliates: users[currentUser].miningData.affiliates 
+    };
+    localStorage.setItem("users", JSON.stringify(users));
 }
 
-// Mise à jour du compteur en temps réel
+// Mise à jour du compteur en temps réel (seulement si le minage est actif)
 setInterval(() => {
     if (miningActive) {
         balance += miningSpeed / 3600;
@@ -328,34 +343,26 @@ setInterval(() => {
     }
 }, 1000);
 
-// Fonction pour sauvegarder les données
-function saveData() {
-    users[currentUser].miningData = { balance, miningSpeed, lastMiningTime: new Date().toISOString(), miningActive, affiliates: users[currentUser].miningData.affiliates };
-    localStorage.setItem("users", JSON.stringify(users));
-}
-
-// Gestion du bouton de minage
+// Gestion du bouton "Miner"
 minerBtn.addEventListener("click", () => {
     if (!miningActive) {
         miningActive = true;
+        lastMiningTime = new Date();
         minerBtn.disabled = true;
         saveData();
 
-        setTimeout(() => {
-            minerBtn.disabled = false;
-            miningActive = false;
-            saveData();
-        }, 86400000);
+        // Bloquer le bouton pendant 24h
+        setTimeout(() => { minerBtn.disabled = false; miningActive = false; saveData(); }, 86400000);
     }
 });
 
 // Partage du lien d'affiliation
 function shareLink() {
-    let referralLink = `https://t.me/joinchat/monlien?ref=${currentUser}`;
+    let referralLink = `https://t.me/piboosterbot?start`;
     navigator.clipboard.writeText(referralLink).then(() => alert("Lien copié !"));
 }
 
-// Ouvrir et fermer la fenêtre d'échange
+// Échange de πb
 function openExchange() {
     if (balance < 1) {
         document.getElementById("exchange-modal").style.display = "block";
@@ -371,7 +378,7 @@ function closeExchange() {
     document.getElementById("exchange-modal").style.display = "none";
 }
 
-// Déconnexion (manuelle)
+// Déconnexion
 document.getElementById("logout-btn").addEventListener("click", () => {
     sessionStorage.removeItem("currentUser");
     window.location.href = "index.html";
@@ -387,6 +394,15 @@ setTimeout(() => {
     document.getElementById("loading-screen").style.display = "none";
 }, 1000);
 
+// Gestion des affiliés
+function onNewAffiliate() {
+    let currentUserAffiliates = users[currentUser].miningData.affiliates + 1;
+    updateMiningData(currentUser, currentUserAffiliates);
+
+    // Mise à jour de l'affichage
+    document.getElementById("nombre").querySelector('span').textContent = currentUserAffiliates;
+    document.getElementById("speed-btn").querySelector('span').textContent = users[currentUser].miningData.miningSpeed.toFixed(2) + " πb/h";
+}
 
 </script>
 
